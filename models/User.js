@@ -9,7 +9,8 @@ const userSchema = new mongoose.Schema({
   cart: [{ 
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' }, 
     quantity: { type: Number, default: 1 } 
-  }],
+  }]
+  
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerVendor, loginVendor, updateStoreDetails, addProduct, getVendorProducts, updateProduct, deleteProduct, getVendorOrders, updateOrderStatus } = require("../controllers/vendorController");
+const { registerVendor, loginVendor, updateStoreDetails, addProduct, getVendorProducts, updateProduct, deleteProduct, getVendorOrders, updateOrderStatus, uploadImageMiddleware, getproduct } = require("../controllers/vendorController");
 
 
 const router = express.Router();
@@ -12,8 +12,9 @@ router.post("/login", loginVendor);
 router.put("/update", updateStoreDetails);
 
 // Product management
-router.post("/product", addProduct);
-router.get("/products", getVendorProducts);
+router.post("/add-Product", uploadImageMiddleware, addProduct);
+router.get("/products/:vendorId", getVendorProducts);
+router.get("/getproduct/:productId",getproduct)
 router.put("/product/:id", updateProduct);
 router.delete("/product/:id", deleteProduct);
 

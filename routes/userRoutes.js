@@ -15,9 +15,10 @@ router.put('/profile/change-password', userController.changeUserPassword);
 // Cart Management
 router.post('/cart/add', userController.addToCart);
 router.delete('/cart/remove/:productId', userController.removeFromCart);
-router.put('/cart/update/:productId', userController.updateCartItem);
-router.get('/cart', userController.getCart);
+router.put('/cart/update', userController.updateCartItem);
+router.get('/cart/:userid', userController.getCart);
 
+router.get("/nearby", userController.getNearbyVendors);
 // Order Management
 router.post('/order/place', userController.placeOrder);
 router.get('/order/history', userController.getOrderHistory);
