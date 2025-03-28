@@ -14,14 +14,18 @@ router.put('/profile/change-password', userController.changeUserPassword);
 
 // Cart Management
 router.post('/cart/add', userController.addToCart);
-router.delete('/cart/remove/:productId', userController.removeFromCart);
+router.delete('/cart/remove', userController.removeFromCart);
 router.put('/cart/update', userController.updateCartItem);
+router.put('/cart/clear', userController.clearCart);
 router.get('/cart/:userid', userController.getCart);
+router.post("/cart/details", userController.getFullCartDetails);
+router.post("/create-order",userController.createOrder)
+router.post("/save-order",userController.saveOrder)
 
 router.get("/nearby", userController.getNearbyVendors);
 // Order Management
-router.post('/order/place', userController.placeOrder);
-router.get('/order/history', userController.getOrderHistory);
+router.put('/order-rating', userController.OrderRating);
+router.get('/order-history/:userId', userController.getOrderHistory);
 router.put('/order/cancel/:orderId', userController.cancelOrder);
 
 module.exports = router;

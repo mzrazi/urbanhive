@@ -8,6 +8,7 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const User = require('../models/User');
 
 const uploadDir = path.join(__dirname, "../public/uploads");
 const storage = multer.diskStorage({
@@ -175,7 +176,7 @@ const updateProduct = async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 };
-
+ 
 // Delete Product
 const deleteProduct = async (req, res) => {
     try {
@@ -216,6 +217,48 @@ const getproduct = async(req,res)=>{
     res.status(500).json({ message: "Server error" });
   }
 }
+const getVendorStats = async (req, res) => {
+  try {
+    const { vendorId } = req.params;
 
+    // 1. Find vendor by ID
+    const vendor = await Vendor.findById(vendorId);
+    if (!vendor) {
+      return res.status(404).json({ error: 'Vendor not found' });
+    }
 
-module.exports = {getproduct,uploadImageMiddleware , registerVendor, loginVendor, updateStoreDetails, addProduct, getVendorProducts, updateProduct, deleteProduct, getVendorOrders, updateOrderStatus };
+    // 2. Get the total number of orders for the vendor
+    const totalOrders = await Order.countDocuments({ vendor: vendorId });
+
+    // 3. Get the total number of products for the vendor
+    const totalProducts = await Product.countDocuments({ vendor: vendorId });
+
+    // 4. Get the total number of users on the platform
+    const totalUsers = await User.countDocuments();
+
+    // 5. Calculate total revenue for the vendor (sum of all amounts in the orders)
+    const orders = await Order.find({ vendor: vendorId });
+    const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // 6. Calculate the average rating for the vendor
+    const ratedOrders = orders.filter(order => order.rating > 0);  // Filter orders that have a rating
+    const totalRating = ratedOrders.reduce((sum, order) => sum + order.rating, 0);
+    const averageRating = ratedOrders.length > 0 ? totalRating / ratedOrders.length : 0;
+
+    // Return the vendor stats as a response
+    return res.status(200).json({
+      totalOrders,
+      totalProducts,
+      totalUsers,
+      totalRevenue,
+      averageRating
+    });
+  } catch (error) {
+    console.error('Error fetching vendor stats:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+ 
+
+module.exports = {getVendorStats, getproduct,uploadImageMiddleware , registerVendor, loginVendor, updateStoreDetails, addProduct, getVendorProducts, updateProduct, deleteProduct, getVendorOrders, updateOrderStatus };

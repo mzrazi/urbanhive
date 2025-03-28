@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerVendor, loginVendor, updateStoreDetails, addProduct, getVendorProducts, updateProduct, deleteProduct, getVendorOrders, updateOrderStatus, uploadImageMiddleware, getproduct } = require("../controllers/vendorController");
+const { registerVendor, loginVendor, updateStoreDetails, addProduct, getVendorProducts, updateProduct, deleteProduct, getVendorOrders, updateOrderStatus, uploadImageMiddleware, getproduct, getVendorStats } = require("../controllers/vendorController");
 
 
 const router = express.Router();
@@ -7,6 +7,7 @@ const router = express.Router();
 // Vendor authentication
 router.post("/register", registerVendor);
 router.post("/login", loginVendor);
+router.get("/dashboard/:vendorId",getVendorStats)
 
 // Vendor store management
 router.put("/update", updateStoreDetails);
@@ -15,7 +16,7 @@ router.put("/update", updateStoreDetails);
 router.post("/add-Product", uploadImageMiddleware, addProduct);
 router.get("/products/:vendorId", getVendorProducts);
 router.get("/getproduct/:productId",getproduct)
-router.put("/product/:id", updateProduct);
+router.put("/update-product/:id", updateProduct);
 router.delete("/product/:id", deleteProduct);
 
 // Order management
