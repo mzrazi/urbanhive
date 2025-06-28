@@ -13,12 +13,13 @@ const orderSchema = new mongoose.Schema(
     totalAmount: { type: Number, required: true },
     orderStatus: {
       type: String,
-      enum: ["Pending", "Processing", "Delivered", "Cancelled"],
+      enum: ["Pending", "Out for Delivery", "Delivered", "Cancelled"],
       default: "Pending",
     },
+    
     paymentStatus: {
       type: String,
-      enum: ["Pending", "Successful", "Failed"],
+      enum: ["Pending", "Successful", "Failed"], 
       default: "Pending",
     },
     razorpayOrderId: { type: String, required: true }, // Store Razorpay order ID directly
@@ -29,7 +30,7 @@ const orderSchema = new mongoose.Schema(
     deliveryDate: { type: Date },
     history: [
       {
-        status: { type: String, enum: ["Pending", "Processing", "Delivered", "Cancelled"], required: true },
+        status: { type: String, enum: ["Pending", "out for delivery", "Delivered", "Cancelled"], required: true },
         updatedAt: { type: Date, default: Date.now },
         updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       },

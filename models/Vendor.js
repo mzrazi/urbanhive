@@ -10,17 +10,21 @@ const vendorSchema = new mongoose.Schema({
   category:{ type: String, required: true },
   products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
   
-  // New location field to store shop coordinates (latitude and longitude)
+  
   location: {
-    type: { type: String, enum: ['Point'], default: 'Point' }, // Required for GeoJSON
+    type: { type: String, enum: ['Point'], default: 'Point' }, 
     coordinates: {
-      type: [Number], // Array of numbers [longitude, latitude]
+      type: [Number], 
       required: true,
     },
   },
+  averageRating: {
+    type: Number,
+    default: 0,  
+  },
   
-  // Field to track if the vendor is approved by admin
-  approvedByAdmin: { type: Boolean, default: false }, // Default to false until approved
+  
+  approvedByAdmin: { type: Boolean, default: false }, 
   
   createdAt: { type: Date, default: Date.now },
 });

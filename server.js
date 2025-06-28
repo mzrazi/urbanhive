@@ -16,10 +16,7 @@ connectDB();
 // Routes
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/vendors", require("./routes/vendorRoutes"));
-app.use("/api/products", require("./routes/productRoutes"));
-app.use("/api/orders", require("./routes/orderRoutes"));
-app.use("/api/reviews", require("./routes/reviewRoutes"));
-app.use("/api/complaints", require("./routes/complaintRoutes"));
+app.use("/api/admin", require("./routes/adminRoutes"));
 
 // Server Port
 const PORT = process.env.PORT || 5000;

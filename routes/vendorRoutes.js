@@ -17,10 +17,10 @@ router.post("/add-Product", uploadImageMiddleware, addProduct);
 router.get("/products/:vendorId", getVendorProducts);
 router.get("/getproduct/:productId",getproduct)
 router.put("/update-product/:id", updateProduct);
-router.delete("/product/:id", deleteProduct);
+router.delete("/delete-product/:id", deleteProduct);
 
 // Order management
-router.get("/orders", getVendorOrders);
+router.get("/get-orders/:id", getVendorOrders);
 router.put("/order/:id", updateOrderStatus);
 
 module.exports = router;

@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const Vendor = require("../models/Vendor");
 const Razorpay = require("razorpay");
 const crypto = require('crypto');
+const Complaint=require('../models/Complaint')
 
 
 
@@ -50,7 +51,7 @@ const registerUser = async (req, res) => {
       
      
   
-      // Fetch user details
+      // Fetch user details 
       const user = await User.findById(userid).populate("cart.product");
       
       
@@ -132,9 +133,14 @@ const loginUser = async (req, res) => {
 // Get User Profile
 const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const {userid} =req.params;
+   
+    
+    const user = await User.findById(userid).select('-password');
     res.json(user);
   } catch (error) {
+    console.log(error);
+    
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -142,12 +148,20 @@ const getUserProfile = async (req, res) => {
 // Update User Profile
 const updateUserProfile = async (req, res) => {
   try {
-    const { name, email } = req.body;
-    const user = await User.findById(req.user.id);
+
+    const {userid, name, email, phone, address } = req.body; // Add any other fields you want to update
+    console.log(req.body);
+    
+    const user = await User.findById(userid);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
+    // Update fields, but don't touch the password
     user.name = name || user.name;
     user.email = email || user.email;
+    user.phone = phone || user.phone;
+    user.address = address || user.address;
+
+    // Save the updated user data
     await user.save();
 
     res.json({ message: 'Profile updated successfully' });
@@ -155,6 +169,7 @@ const updateUserProfile = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 // Change Password
 const changeUserPassword = async (req, res) => {
@@ -216,7 +231,7 @@ const removeFromCart = async (req, res) => {
     const user = await User.findById(userid);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    console.log("Before Removing:", user.cart);
+
 
     // Ensure productId is converted to a string
     const productIdStr = productId.toString();
@@ -226,7 +241,7 @@ const removeFromCart = async (req, res) => {
 
     await user.save();
 
-    console.log("After Removing:", user.cart);
+    
 
     res.json({ message: "Removed from cart", cart: user.cart });
   } catch (error) {
@@ -300,16 +315,22 @@ const placeOrder = async (req, res) => {
 
 const getOrderHistory = async (req, res) => {
   try {
-    const {userId}=req.params;
+    const { userId } = req.params;
 
     const orders = await Order.find({ user: userId })
     .populate('user', 'name email phone')  
     .populate('vendor', 'name email phone address')
+    .populate('products.productId', 'name price image') // Populate product details
+    .sort({ createdAt: -1 }); // Sort by latest order first
+  
+
+    
     res.json(orders);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 const cancelOrder = async (req, res) => {
   try {
@@ -329,6 +350,8 @@ const cancelOrder = async (req, res) => {
 const getNearbyVendors = async (req, res) => {
   try {
     const { lat, lng } = req.query;
+   
+    
 
     if (!lat || !lng) {
       return res.status(400).json({ error: "Latitude and Longitude are required" });
@@ -342,31 +365,15 @@ const getNearbyVendors = async (req, res) => {
             type: "Point",
             coordinates: [parseFloat(lng), parseFloat(lat)],
           },
-          $maxDistance: 100000, // 10 km radius
+          $maxDistance: 1000000, // 10 km radius
         },
       },
     });
 
-    // Fetch orders for each vendor and calculate the average rating
-    const vendorsWithRatings = await Promise.all(
-      vendors.map(async (vendor) => {
-        // Find all orders of this vendor
-        const orders = await Order.find({ vendor: vendor._id });
-
-        // Filter out orders with a rating of 0
-        const ratedOrders = orders.filter(order => order.rating > 0);
-
-        // Calculate the average rating from the rated orders
-        const totalRating = ratedOrders.reduce((sum, order) => sum + order.rating, 0);
-        const averageRating = ratedOrders.length > 0 ? totalRating / ratedOrders.length : 0;
-
-        // Append the average rating to the vendor data
-        return { ...vendor.toObject(), averageRating };
-      })
-    );
+   
 
     // Send the vendors with their average ratings to the frontend
-    res.status(200).json(vendorsWithRatings);
+    res.status(200).json(vendors);
   } catch (error) {
     console.error("Error fetching vendors:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -475,24 +482,111 @@ const saveOrder = async (req, res) => {
 const OrderRating = async (req, res) => {
   try {
     const { orderId, rating } = req.body; // Receive orderId and rating from the request body
+  
     
-    // Find the order by its ID and update the rating
-    const order = await Order.findByIdAndUpdate(
-      orderId,
-      { rating: rating },
-      { new: true } // To return the updated order
-    );
+    // Find the order by its ID
+    const order = await Order.findById(orderId);
     
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    res.status(200).json(order);
+    // Update the order with the new rating
+    order.rating = rating;
+    await order.save();
+
+    // Find the vendor associated with this order (assuming order.vendorId exists)
+    const vendor = await Vendor.findById(order.vendor);
+    console.log(vendor);
+    
+    if (!vendor) {
+      return res.status(404).json({ message: 'Vendor not found' });
+    }
+
+    // Use aggregation to calculate the new average rating for the vendor based on the updated ratings
+    const vendorOrders = await Order.aggregate([
+      { $match: { vendor: vendor._id } },  // Match orders for the vendor
+      { $match: { rating: { $gt: 0 } } },  // Filter out orders that have a rating of 0
+      {
+        $group: {
+          _id: "$vendorId", 
+          totalRatings: { $sum: "$rating" },  
+          count: { $sum: 1 }, 
+        }
+      }
+    ]);
+    
+    
+
+    // If no rated orders, set the average rating to 0
+    const averageRating = vendorOrders.length > 0
+      ? vendorOrders[0].totalRatings / vendorOrders[0].count
+      : 0;
+
+    // Update the vendor's rating with the new average
+    vendor.averageRating = averageRating;
+   
+    await vendor.save();
+
+    // Return the updated order and vendor data
+    res.status(200).json({ order, vendor });
   } catch (error) {
+    console.log(error);
+    
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
+
+// Function to get random featured products
+const getRandomProducts = async (count) => {
+  const products = await Product.find({ }).populate('vendor');
+  const shuffled = products.sort(() => 0.5 - Math.random()); // Shuffle the array
+  return shuffled.slice(0, count); // Return 'count' number of products
+};
+
+// Function to get popular vendors (sorted by rating)
+const getPopularVendors = async (count) => {
+  return await Vendor.find().sort({ AverageRating: -1 }).limit(count);
+};
+
+
+const viewProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Find product by ID
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json(product);
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const submitComplaint = async (req, res) => {
+try {
+  const { description } = req.body;
+  const userId = req.body.id; // Get user from token
+
+  if (!description) {
+    return res.status(400).json({ message: "Description is required." });
+  }
+
+  const newComplaint = new Complaint({ user: userId, description });
+  await newComplaint.save();
+
+  res.status(201).json({ message: "Complaint submitted successfully!" });
+} catch (error) {
+  console.error(error);
+  res.status(500).json({ message: "Server Error" });
+}
+}
 
 
 
@@ -505,6 +599,8 @@ const OrderRating = async (req, res) => {
 
 // Export all functions
 module.exports = {
+  submitComplaint,
+  getRandomProducts,getPopularVendors,
   saveOrder,
   createOrder,
   getNearbyVendors,
@@ -521,5 +617,5 @@ module.exports = {
   cancelOrder,
   updateCartItem,
   clearCart,getFullCartDetails
-  ,OrderRating 
+  ,OrderRating ,viewProduct
 };

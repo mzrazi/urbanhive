@@ -9,6 +9,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const User = require('../models/User');
+const { log } = require("console");
 
 const uploadDir = path.join(__dirname, "../public/uploads");
 const storage = multer.diskStorage({
@@ -169,10 +170,14 @@ const getVendorProducts = async (req, res) => {
 
 // Update Product
 const updateProduct = async (req, res) => {
-    try {
+    try {console.log(req.body);
+    
         const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        
         res.json({ message: "Product updated", product: updatedProduct });
     } catch (error) {
+      console.log(error);
+      
         res.status(500).json({ message: "Server error" });
     }
 };
@@ -190,9 +195,12 @@ const deleteProduct = async (req, res) => {
 // Get Vendor Orders
 const getVendorOrders = async (req, res) => {
     try {
-        const orders = await Order.find({ vendor: req.user.id }).populate("products");
+        const orders = await Order.find({ vendor: req.params.id }).populate("products.productId");
+      
+      
         res.json(orders);
     } catch (error) {
+
         res.status(500).json({ message: "Server error" });
     }
 };
@@ -248,7 +256,7 @@ const getVendorStats = async (req, res) => {
     // Return the vendor stats as a response
     return res.status(200).json({
       totalOrders,
-      totalProducts,
+      totalProducts, 
       totalUsers,
       totalRevenue,
       averageRating
