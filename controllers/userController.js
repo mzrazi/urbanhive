@@ -189,7 +189,6 @@ const changeUserPassword = async (req, res) => {
   }
 };
 
-// Cart Functions
 const addToCart = async (req, res) => {
   try {
     const { userid, productId } = req.body;
@@ -212,6 +211,21 @@ const addToCart = async (req, res) => {
   }
 };
 
+const clearCart = async (req, res) => {
+  try {
+    const { userid } = req.body; // Get user ID from request body
+    const user = await User.findById(userid);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.cart = []; // Clear the cart array
+    await user.save();
+
+    res.json({ message: "Cart cleared successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
  
 
 const removeFromCart = async (req, res) => {
