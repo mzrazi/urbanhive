@@ -192,35 +192,26 @@ const changeUserPassword = async (req, res) => {
 // Cart Functions
 const addToCart = async (req, res) => {
   try {
-    const { userid }=req.body
-  
+    const { userid, productId } = req.body;
     
     const user = await User.findById(userid);
-    user.cart.push({ product: req.body.productId, quantity: 1 });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Add to cart
+    user.cart.push({ product: productId, quantity: 1 });
     await user.save();
 
-    res.json({ message: 'Added to cart' });
+    // Get the last added cart item and populate product
+    const lastItem = user.cart[user.cart.length - 1];
+    await lastItem.populate('product');
+
+    res.json(lastItem);  // Return full cart item with populated product
   } catch (error) {
-   
-    
+    console.error("Error in addToCart:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-const clearCart = async (req, res) => {
-  try {
-    const { userid } = req.body; // Get user ID from request body
-    const user = await User.findById(userid);
 
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    user.cart = []; // Clear the cart array
-    await user.save();
-
-    res.json({ message: "Cart cleared successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
  
 
 const removeFromCart = async (req, res) => {
