@@ -192,24 +192,33 @@ const changeUserPassword = async (req, res) => {
 const addToCart = async (req, res) => {
   try {
     const { userid, productId } = req.body;
-    
+
+    // 1. Find the user
     const user = await User.findById(userid);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Add to cart
+    // 2. Add the new item to cart
     user.cart.push({ product: productId, quantity: 1 });
+
+    // 3. Save the updated user document
     await user.save();
 
-    // Get the last added cart item and populate product
-    const lastItem = user.cart[user.cart.length - 1];
-    await lastItem.populate('product');
+    // 4. Re-fetch user with the last cart item populated
+    await user.populate({
+      path: 'cart.product',
+      model: 'Product',
+    });
 
-    res.json(lastItem);  // Return full cart item with populated product
+    const lastItem = user.cart[user.cart.length - 1];
+
+    // 5. Return the last item with populated product
+    res.status(200).json(lastItem);
   } catch (error) {
     console.error("Error in addToCart:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 const clearCart = async (req, res) => {
   try {
