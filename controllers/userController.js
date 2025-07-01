@@ -370,7 +370,8 @@ const getNearbyVendors = async (req, res) => {
             type: "Point",
             coordinates: [parseFloat(lng), parseFloat(lat)],
           },
-          $maxDistance: 1000000, // 10 km radius
+         $maxDistance: 2000000 // 2000 km (approx all-India coverage)
+, 
         },
       },
     });
@@ -514,7 +515,7 @@ const OrderRating = async (req, res) => {
       { $match: { rating: { $gt: 0 } } },  // Filter out orders that have a rating of 0
       {
         $group: {
-          _id: "$vendorId", 
+          _id: "$vendor", 
           totalRatings: { $sum: "$rating" },  
           count: { $sum: 1 }, 
         }
