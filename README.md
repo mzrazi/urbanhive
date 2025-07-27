@@ -28,12 +28,13 @@ git clone https://github.com/yourusername/urbanhive-backend.git
 cd urbanhive-backend
 npm install
 npm run dev
+```
 
-📁 Environment Setup
+## 📁 Environment Setup
 Create a .env file and add the following:
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
+JWT_SECRET=your_jwt_secret 
 
 
 
